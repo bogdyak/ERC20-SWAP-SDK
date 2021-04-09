@@ -1,17 +1,17 @@
 # ERC20-SWAP-SDK
- ##swapExactETHForTokens() - 
+ ## swapExactETHForTokens() - 
  PARAM1: Кол-во (Сколько BNB меняем).
  PARAM2: Адрес кошелька откуда меняем. 
  PARAM3: Адрес токена, на который меняем BNB.
   
-  ##swapExactTokensForTokens() - 
+  ## swapExactTokensForTokens() - 
   PARAM1: Кол-во токена который отдаем. 
   PARAM2: Адрес кошелька откуда меняем. 
   PARAM2: Адрес токена который меняем.
   PARAM3: Адрес токена который хотим получить. 
   PARAM4: decimals токена, который отдаем.
 
-  ##getBalance() - 
+  ## getBalance() - 
   PARAM1: Адрес кошелька, чей баланс хотим получить. 
   PARAM2: Адрес токена, баланс которого мы хотим получить. 
   PARAM3: decimals токена, чей баланс хотим получить.
