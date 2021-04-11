@@ -16,8 +16,19 @@
  - (STRING) PARAM2: Адрес токена, баланс которого мы хотим получить. 
  - (INT) PARAM3: decimals токена, чей баланс хотим получить.
 
+  ### getLPBalance()
+  - (STRING) PARAM1: Адрес первого токена пары.
+  - (STRING) PARAM2: Адрес второго токена пары.
+  - (STRING) PARAM3: Адрес кошелька.
+
   ### addLiquidityETH()
  - (STRING) PARAM1: Адрес токена, который хотим добавить в ликвидность.
  - (STRING) PARAM2: Адрес кошелька, с которого добавляем ликвидность.
  - (INT) PARAM3: Количество токена, которое добавляем в ликвидность.
  - (INT) PARAM4: decimals токена, который добавляем в ликвидность.
+
+  ### addLiqudity()
+  - (OBJECT) PARAM1: { (string) address: адрес первого токена, (int) amount: кол-во первого токена, (int) decimals: decimals первого токена }
+  - (STRING) PARAM2: Адрес второго токена
+  - (STRING) PARAM3: Адрес кошелька
+  - (INT) PARAM4: decimals второго токена.
