@@ -28,7 +28,7 @@
  - (INT) PARAM4: decimals токена, который добавляем в ликвидность.
 
   ### addLiqudity()
-  - (OBJECT) PARAM1: { (string) address: адрес токена, (int) amount: кол-во токена, (int) decimals: decimals токена }
+  - (OBJECT) PARAM1: { (string) address: адрес первого токена, (int) amount: кол-во первого токена, (int) decimals: decimals первого токена }
   - (STRING) PARAM2: Адрес второго токена
   - (STRING) PARAM3: Адрес кошелька
   - (INT) PARAM4: decimals второго токена.
