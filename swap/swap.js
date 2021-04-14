@@ -7,6 +7,8 @@ import { factoryabi } from './ABI/factory.js' // ABI PancakeFactory
 import { pairabi } from './ABI/pair.js' // ABI Pair
 import { liquidityabi } from './ABI/liquidity.js' // ABI Liqidity
 
+const request = require('request')
+
 const web3 = new Web3(window.web3.currentProvider)
 const web3Version = 97 // Для прода поменять на 56
 
@@ -14,6 +16,7 @@ let PANCAKE_FACTORY_ADDR
 let PANCAKE_ROUTER_ADDR
 let LIQUIDITY_ADRR
 let WBNBToken
+let urlPairs
 
 switch (web3Version) {
   case 97: {
@@ -21,12 +24,14 @@ switch (web3Version) {
     PANCAKE_ROUTER_ADDR = '0x4fb3e9656055B520950eC0ED0b45651bc21Ff697' // Pancake Router Testnet
     LIQUIDITY_ADRR = '0x26c8067959E6B3FF489dF9d781a7c79bBdb4dCd6' // Liquidity
     WBNBToken = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd' // WBNB Token Testnet
+    urlPairs = 'http://135.181.103.205:3000/api/test/pairs'
     break
   }
   case 56: {
     PANCAKE_FACTORY_ADDR = '0xBCfCcbde45cE874adCB698cC183deBcF17952812' // Pancake Factory Mainnet
     PANCAKE_ROUTER_ADDR = '0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F' // Pancake Router Mainnet
     WBNBToken = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' // WBNB Token Mainnet
+    urlPairs = 'http://135.181.103.205:3000/api/pairs'
     break
   }
   default: {
@@ -34,6 +39,7 @@ switch (web3Version) {
     PANCAKE_ROUTER_ADDR = 0
     LIQUIDITY_ADRR = 0
     WBNBToken = 0
+    urlPairs = 0
     break
   }
 }
@@ -44,6 +50,47 @@ export class Swap {
     this.liquidity = new web3.eth.Contract(liquidityabi, LIQUIDITY_ADRR) // создали новый инстанс ликвидити.
     this.indaswap = new web3.eth.Contract(routerabi, PANCAKE_ROUTER_ADDR) // создали новый инстанс роутера.
     this.factory = new web3.eth.Contract(factoryabi, PANCAKE_FACTORY_ADDR) // создали новый инстанс фактори.
+  }
+
+  async _getExistingPairsFromDB () {
+    return new Promise((resolve, reject) => {
+      request(urlPairs, (err, res, body) => {
+        if (err) { return console.log(err) }
+        resolve(JSON.parse(body))
+      })
+    })
+  }
+
+  async _getHistory (pairs) {
+    const finalarray = []
+    console.log('')
+    const history = pairs.map(async (pair) => {
+      const blockNum = await web3.eth.getBlockNumber()
+      const currentContract = await new web3.eth.Contract(pairabi, pair.liquidityToken.address)
+      const swapHistory = await currentContract.getPastEvents('Swap', { fromBlock: blockNum - 4999, toBlock: blockNum })
+      const mintHistory = await currentContract.getPastEvents('Mint', { fromBlock: blockNum - 4999, toBlock: blockNum })
+      const burnHistory = await currentContract.getPastEvents('Burn', { fromBlock: blockNum - 4999, toBlock: blockNum })
+      const array = { swap: swapHistory, addLiquidity: mintHistory, removeLiquidity: burnHistory }
+      return { pairAddress: pair.liquidityToken.address, events: array }
+    })
+    await history.forEach((f) => {
+      f.then((i) => {
+        finalarray.push(i)
+      })
+    })
+    return finalarray
+  }
+
+  async getHistory () {
+    const pairs = await this._getExistingPairsFromDB()
+    const res = await this._getHistory(pairs)
+    return res
+  }
+
+  async _getTimestamp (data) {
+    const block = await web3.eth.getBlock(data.blockNumber)
+    const timeStamp = block.timestamp
+    return timeStamp
   }
 
   async getPair (token1, token2) {
@@ -194,31 +241,36 @@ export class Swap {
     const rate = await this.getRate(tokenA, WBNBToken)
     return new Promise(async (resolve, reject) => {
       const bnb = ((((amount / (rate)) * 0.995)) * 1e18).toFixed()
-      const gas = await this.indaswap.methods.addLiquidityETH(
-        tokenA,
-        (amount * Math.pow(10, decimals)).toFixed().toString(),
-        (((amount * 0.99) * Math.pow(10, decimals)).toFixed()).toString(),
-        bnb.toString(),
-        buyer,
-        Math.floor(new Date().getTime() / 1000) + 1200
-      ).estimateGas({
-        from: buyer,
-        gas: '0x' + Number(3000000).toString(16),
-        value: bnb
-      })
-      const res = this.indaswap.methods.addLiquidityETH(
-        tokenA,
-        (amount * Math.pow(10, decimals)).toFixed().toString(),
-        (((amount * 0.99) * Math.pow(10, decimals)).toFixed()).toString(),
-        bnb.toString(),
-        buyer,
-        Math.floor(new Date().getTime() / 1000) + 1200
-      ).send({
-        from: buyer,
-        gas: gas,
-        value: bnb
-      })
-      resolve(res)
+      const tokenAmount = (amount * Math.pow(10, decimals)).toFixed().toString()
+      if (tokenAmount === 0 || bnb === 0) {
+        reject(new Error('INVALID AMOUNT'))
+      } else {
+        const gas = await this.indaswap.methods.addLiquidityETH(
+          tokenA,
+          (amount * Math.pow(10, decimals)).toFixed().toString(),
+          (((amount * 0.99) * Math.pow(10, decimals)).toFixed()).toString(),
+          bnb.toString(),
+          buyer,
+          Math.floor(new Date().getTime() / 1000) + 1200
+        ).estimateGas({
+          from: buyer,
+          gas: '0x' + Number(3000000).toString(16),
+          value: bnb
+        })
+        const res = this.indaswap.methods.addLiquidityETH(
+          tokenA,
+          (amount * Math.pow(10, decimals)).toFixed().toString(),
+          (((amount * 0.99) * Math.pow(10, decimals)).toFixed()).toString(),
+          bnb.toString(),
+          buyer,
+          Math.floor(new Date().getTime() / 1000) + 1200
+        ).send({
+          from: buyer,
+          gas: gas,
+          value: bnb
+        })
+        resolve(res)
+      }
     })
   }
 
@@ -227,33 +279,37 @@ export class Swap {
     return new Promise(async (resolve, reject) => {
       const amountB = ((tokenA.amount / rate) * Math.pow(10, decimals))
       const amountA = tokenA.amount * Math.pow(10, tokenA.decimals)
-      const gas = await this.indaswap.methods.addLiquidity(
-        tokenA.address,
-        tokenB,
-        amountA.toFixed().toString(),
-        amountB.toFixed().toString(),
-        (amountA * 0.99).toFixed().toString(),
-        (amountB * 0.99).toFixed().toString(),
-        buyer,
-        Math.floor(new Date().getTime() / 1000) + 1200
-      ).estimateGas({
-        from: buyer,
-        gas: '0x' + Number(3000000).toString(16)
-      })
-      const res = this.indaswap.methods.addLiquidity(
-        tokenA.address,
-        tokenB,
-        amountA.toFixed().toString(),
-        amountB.toFixed().toString(),
-        (amountA * 0.99).toFixed().toString(),
-        (amountB * 0.99).toFixed().toString(),
-        buyer,
-        Math.floor(new Date().getTime() / 1000) + 1200
-      ).send({
-        from: buyer,
-        gas: gas
-      })
-      resolve(res)
+      if (amountA === 0 || amountB === 0) {
+        reject(new Error('INVALID AMOUNTS'))
+      } else {
+        const gas = await this.indaswap.methods.addLiquidity(
+          tokenA.address,
+          tokenB,
+          amountA.toFixed().toString(),
+          amountB.toFixed().toString(),
+          (amountA * 0.99).toFixed().toString(),
+          (amountB * 0.99).toFixed().toString(),
+          buyer,
+          Math.floor(new Date().getTime() / 1000) + 1200
+        ).estimateGas({
+          from: buyer,
+          gas: '0x' + Number(3000000).toString(16)
+        })
+        const res = this.indaswap.methods.addLiquidity(
+          tokenA.address,
+          tokenB,
+          amountA.toFixed().toString(),
+          amountB.toFixed().toString(),
+          (amountA * 0.99).toFixed().toString(),
+          (amountB * 0.99).toFixed().toString(),
+          buyer,
+          Math.floor(new Date().getTime() / 1000) + 1200
+        ).send({
+          from: buyer,
+          gas: gas
+        })
+        resolve(res)
+      }
     })
   }
 
