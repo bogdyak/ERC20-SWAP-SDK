@@ -61,8 +61,22 @@ export class Swap {
     })
   }
 
+  _promiseAll (promises) {
+    var count = promises.length // количество ожидаемых Promise
+    var result = new Array(count) // результат
+    return new Promise((resolve, reject) => {
+      for (let i = 0; i < promises.length; i++) {
+        promises[i].then(val => { // если Promise решен
+          result[i] = val // сохраняем результа
+          if (--count === 0) { // если больше нечего ждать
+            resolve(result) // возвращаем результат
+          }
+        }, (err) => reject(err)) // если ошибка - прерываем основной Promise
+      }
+    })
+  }
+
   async _getHistory (pairs) {
-    const finalarray = []
     console.log('')
     const history = pairs.map(async (pair) => {
       const blockNum = await web3.eth.getBlockNumber()
@@ -73,12 +87,8 @@ export class Swap {
       const array = { swap: swapHistory, addLiquidity: mintHistory, removeLiquidity: burnHistory }
       return { pairAddress: pair.liquidityToken.address, events: array }
     })
-    await history.forEach((f) => {
-      f.then((i) => {
-        finalarray.push(i)
-      })
-    })
-    return finalarray
+    const result = await this._promiseAll(history)
+    return result
   }
 
   async getHistory () {
