@@ -85,7 +85,12 @@ export class Swap {
       const mintHistory = await currentContract.getPastEvents('Mint', { fromBlock: blockNum - 4999, toBlock: blockNum })
       const burnHistory = await currentContract.getPastEvents('Burn', { fromBlock: blockNum - 4999, toBlock: blockNum })
       const array = { swap: swapHistory, addLiquidity: mintHistory, removeLiquidity: burnHistory }
-      return { pairAddress: pair.liquidityToken.address, events: array }
+      return {
+        pairAddress: pair.liquidityToken.address,
+        tokenA: { symbol: pair.tokenAmounts[0].symbol, address: pair.tokenAmounts[0].address },
+        tokenB: { symbol: pair.tokenAmounts[1].symbol, address: pair.tokenAmounts[1].address },
+        events: array
+      }
     })
     const result = await this._promiseAll(history)
     return result
