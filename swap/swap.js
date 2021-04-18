@@ -197,8 +197,8 @@ export class Swap {
 
   async removeLiquidityETH (token, amount, buyer) {
     const liqValue = await this.getLiquidityValue(token, WBNBToken, amount)
-    return new Promise((resolve, reject) => {
-      const gas = this.indaswap.methods.removeLiquidityETH(
+    return new Promise(async (resolve, reject) => {
+      const gas = await this.indaswap.methods.removeLiquidityETH(
         token,
         (amount * 1e18).toFixed().toString(),
         (liqValue.tokenAAmount * 0.99).toFixed().toString(),
@@ -209,7 +209,7 @@ export class Swap {
         from: buyer,
         gas: '0x' + Number(3000000).toString(16)
       })
-      const res = this.indaswap.methods.removeLiquidityETH(
+      const res = await this.indaswap.methods.removeLiquidityETH(
         token,
         (amount * 1e18).toFixed().toString(),
         (liqValue.tokenAAmount * 0.99).toFixed().toString(),
@@ -226,8 +226,8 @@ export class Swap {
 
   async removeLiquidity (tokenA, tokenB, amount, buyer) {
     const liqValue = await this.getLiquidityValue(tokenA, tokenB, amount)
-    return new Promise((resolve, reject) => {
-      const gas = this.indaswap.methods.removeLiquidity(
+    return new Promise(async (resolve, reject) => {
+      const gas = await this.indaswap.methods.removeLiquidity(
         tokenA,
         tokenB,
         (amount * 1e18).toFixed().toString(),
