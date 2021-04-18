@@ -22,7 +22,7 @@ switch (web3Version) {
   case 97: {
     PANCAKE_FACTORY_ADDR = '0xb3bED7c8814DD91dF8e521B154c7c11A0d867822' // Pancake Factory Testnet
     PANCAKE_ROUTER_ADDR = '0x4fb3e9656055B520950eC0ED0b45651bc21Ff697' // Pancake Router Testnet
-    LIQUIDITY_ADRR = '0x26c8067959E6B3FF489dF9d781a7c79bBdb4dCd6' // Liquidity
+    LIQUIDITY_ADRR = '0x26c8067959E6B3FF489dF9d781a7c79bBdb4dCd6' // Liquidity Testnet
     WBNBToken = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd' // WBNB Token Testnet
     urlPairs = 'http://135.181.103.205:3000/api/test/pairs'
     break
@@ -113,16 +113,16 @@ export class Swap {
     return pairAddr
   }
 
-  async getRate (tokenA, tokenB) {
-    const pairaddr = await this.getPair(tokenA, tokenB)
+  async getRate (tokenA, tokenB, decimals) {
+    const pairaddr = await this.getPair(tokenA.address, tokenB)
     const currentPairContract = new web3.eth.Contract(pairabi, pairaddr)
+    const pairTokenFirst = await currentPairContract.methods.token0().call()
     const reserves = await currentPairContract.methods.getReserves().call()
-    const token = reserves._reserve0 / Math.pow(10, 2)
-    const eth = reserves._reserve1 / Math.pow(10, 18)
-
-    this.rate = token / eth
-
-    return this.rate
+    const rate =
+    tokenA === pairTokenFirst
+      ? (reserves._reserve0 / Math.pow(10, tokenA.decimals)) / (reserves._reserve1 / Math.pow(10, decimals))
+      : (reserves._reserve0 / Math.pow(10, decimals)) / (reserves._reserve1 / Math.pow(10, tokenA.decimals))
+    return rate
   }
 
   async getLPBalance (tokenA, tokenB, address) {
@@ -253,7 +253,9 @@ export class Swap {
   }
 
   async addLiquidityETH (tokenA, buyer, amount, decimals) {
-    const rate = await this.getRate(tokenA, WBNBToken)
+    const tokenAdata = { address: tokenA, decimals: decimals }
+    const rate = await this.getRate(tokenAdata, WBNBToken, 18)
+    console.log(rate)
     return new Promise(async (resolve, reject) => {
       const bnb = ((((amount / (rate)) * 0.995)) * 1e18).toFixed()
       const tokenAmount = (amount * Math.pow(10, decimals)).toFixed().toString()
@@ -290,9 +292,9 @@ export class Swap {
   }
 
   async addLiquidity (tokenA, tokenB, buyer, decimals) {
-    const rate = await this.getRate(tokenA.address, tokenB)
+    const rate = await this.getRate(tokenA, tokenB, decimals)
     return new Promise(async (resolve, reject) => {
-      const amountB = ((tokenA.amount / rate) * Math.pow(10, decimals))
+      const amountB = ((tokenA.amount * rate) * Math.pow(10, decimals))
       const amountA = tokenA.amount * Math.pow(10, tokenA.decimals)
       if (amountA === 0 || amountB === 0) {
         reject(new Error('INVALID AMOUNTS'))
