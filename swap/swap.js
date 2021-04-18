@@ -118,10 +118,13 @@ export class Swap {
     const currentPairContract = new web3.eth.Contract(pairabi, pairaddr)
     const pairTokenFirst = await currentPairContract.methods.token0().call()
     const reserves = await currentPairContract.methods.getReserves().call()
-    const rate =
-    tokenA === pairTokenFirst
-      ? (reserves._reserve0 / Math.pow(10, tokenA.decimals)) / (reserves._reserve1 / Math.pow(10, decimals))
-      : (reserves._reserve0 / Math.pow(10, decimals)) / (reserves._reserve1 / Math.pow(10, tokenA.decimals))
+    let rate
+    if (pairTokenFirst === tokenA.address) {
+      rate = (reserves._reserve1 / Math.pow(10, decimals)) / (reserves._reserve0 / Math.pow(10, tokenA.decimals))
+    } else {
+      rate = (reserves._reserve0 / Math.pow(10, decimals)) / (reserves._reserve1 / Math.pow(10, tokenA.decimals))
+    }
+    console.log(rate)
     return rate
   }
 
@@ -296,7 +299,9 @@ export class Swap {
     return new Promise(async (resolve, reject) => {
       const amountB = ((tokenA.amount * rate) * Math.pow(10, decimals))
       const amountA = tokenA.amount * Math.pow(10, tokenA.decimals)
-      if (amountA === 0 || amountB === 0) {
+      const minAmountA = (amountA * 0.99).toFixed().toString()
+      const minAmountB = (amountB * 0.99).toFixed().toString()
+      if (minAmountA === 0 || minAmountB === 0) {
         reject(new Error('INVALID AMOUNTS'))
       } else {
         const gas = await this.indaswap.methods.addLiquidity(
