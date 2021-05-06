@@ -30,6 +30,7 @@ switch (web3Version) {
   case 56: {
     PANCAKE_FACTORY_ADDR = '0x40cbAc284135423c41ACcfc073801d3e4123CBe7' // Pancake Factory Mainnet
     PANCAKE_ROUTER_ADDR = '0x2D6a6dFDd9933dBF1CC94dCEBb088281cF11bF93' // Pancake Router Mainnet
+    LIQUIDITY_ADRR = '0x6eD12dfFdC25A529112d092eDC9731fC888Cd8E9' // Liquidity Token
     WBNBToken = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' // WBNB Token Mainnet
     urlPairs = 'https://indaswap.com/api/pairs'
     break
