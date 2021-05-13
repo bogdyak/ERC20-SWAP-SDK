@@ -24,6 +24,7 @@ switch (web3Version) {
     PANCAKE_ROUTER_ADDR = '0x4fb3e9656055B520950eC0ED0b45651bc21Ff697' // Pancake Router Testnet
     LIQUIDITY_ADRR = '0x26c8067959E6B3FF489dF9d781a7c79bBdb4dCd6' // Liquidity Testnet
     WBNBToken = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd' // WBNB Token Testnet
+    INDAToken = '0x3137643D0a4308df08A7B77e61C657592Cc1687f' // Inda Token Testnet
     urlPairs = 'https://indaswap.com/api/test/pairs'
     break
   }
@@ -32,6 +33,7 @@ switch (web3Version) {
     PANCAKE_ROUTER_ADDR = '0x2D6a6dFDd9933dBF1CC94dCEBb088281cF11bF93' // Pancake Router Mainnet
     LIQUIDITY_ADRR = '0x6eD12dfFdC25A529112d092eDC9731fC888Cd8E9' // Liquidity Token
     WBNBToken = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' // WBNB Token Mainnet
+    INDAToken = '0xC878A79B63A41a831E469AE1A830A765eFd9d468' // INDA Token Mainnet
     urlPairs = 'https://indaswap.com/api/pairs'
     break
   }
@@ -374,6 +376,11 @@ export class Swap {
         resolve(res)
       })
     }
+  }
+
+  async SwapExactTokensForTokensFromInda(sellAmount, buyer, from, to, decimals) {
+    await this.swapExactTokensForTokens(sellAmount, buyer, from, INDAToken, decimals);
+    await this.swapExactTokensForTokens(sellAmount, buyer, INDAToken, to, 2);
   }
 
   async swapExactETHForTokens (sellAmount, buyer, to) {
