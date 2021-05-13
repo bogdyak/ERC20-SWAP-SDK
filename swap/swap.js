@@ -380,7 +380,8 @@ export class Swap {
 
   async SwapExactTokensForTokensFromInda(sellAmount, buyer, from, to, decimals) {
     await this.swapExactTokensForTokens(sellAmount, buyer, from, INDAToken, decimals);
-    await this.swapExactTokensForTokens(sellAmount, buyer, INDAToken, to, 2);
+    const expectedReturn = await this.getBuyAmount(sellAmount, from, INDAToken, decimals);
+    await this.swapExactTokensForTokens(((expectedReturn[1] * 0.995).toFixed()) / Math.pow(10, 2), buyer, INDAToken, to, 2);
   }
 
   async swapExactETHForTokens (sellAmount, buyer, to) {
