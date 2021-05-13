@@ -379,9 +379,45 @@ export class Swap {
   }
 
   async SwapExactTokensForTokensFromInda(sellAmount, buyer, from, to, decimals) {
-    await this.swapExactTokensForTokens(sellAmount, buyer, from, INDAToken, decimals);
-    const expectedReturn = await this.getBuyAmount(sellAmount, from, INDAToken, decimals);
-    await this.swapExactTokensForTokens(((expectedReturn[1] * 0.995).toFixed()) / Math.pow(10, 2), buyer, INDAToken, to, 2);
+    const expectedReturn = await this.getBuyAmount(sellAmount, from, to, decimals)
+    const buyamount = (expectedReturn[1] * 0.995).toFixed()
+    sellAmount = expectedReturn[0]
+    if (buyamount === 0 || sellAmount === 0) {
+      return 'Expected return is 0 or this pair is currently unavailable. Please try bigger amount.'
+    } else {
+      return new Promise(async (resolve, reject) => {
+        const gas = await this.indaswap.methods.swapExactTokensForTokens(
+          sellAmount,
+          buyamount,
+          [
+            from, // какой токен отдаем
+            INDAToken, // Промежуточная валюта
+            to // какой токен хотим получить
+          ],
+          buyer,
+          (Math.floor(new Date().getTime() / 1000) + 1200).toString()
+        ).estimateGas({
+          from: buyer,
+          gas: '0x' + Number(3000000).toString(16)
+        })
+
+        const res = this.indaswap.methods.swapExactTokensForTokens(
+          sellAmount,
+          buyamount,
+          [
+            from, // какой токен отдаем
+            INDAToken, // Промежуточная валюта
+            to // какой токен хотим получить
+          ],
+          buyer,
+          (Math.floor(new Date().getTime() / 1000) + 1200).toString()
+        ).send({
+          from: buyer,
+          gas: gas
+        })
+        resolve(res)
+      })
+    }
   }
 
   async swapExactETHForTokens (sellAmount, buyer, to) {
